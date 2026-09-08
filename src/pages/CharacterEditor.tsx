@@ -32,7 +32,7 @@ export default function CharacterEditor() {
     return (
       <div className="empty">
         <h2>Character not found</h2>
-        <Link className="btn" to="..">
+        <Link className="btn" to=".." relative="path">
           Back to the company
         </Link>
       </div>
@@ -68,8 +68,8 @@ export default function CharacterEditor() {
   function openGraphNode(nodeId: string) {
     const parsed = parseGraphNodeId(nodeId)
     if (!parsed || parsed.entityId === current.id) return
-    if (parsed.kind === 'character') navigate(`../${parsed.entityId}`)
-    else navigate(`../../places/${parsed.entityId}`)
+    if (parsed.kind === 'character') navigate(`/story/${story.id}/characters/${parsed.entityId}`)
+    else navigate(`/story/${story.id}/places/${parsed.entityId}`)
   }
 
   const otherPeople = story.characters.filter((other) => other.id !== character.id)
@@ -78,7 +78,7 @@ export default function CharacterEditor() {
   return (
     <div>
       <div className="back-row">
-        <Link className="btn" to="..">
+        <Link className="btn" to=".." relative="path">
           ← Company
         </Link>
         <button type="button" className="btn btn-wine" onClick={() => setPendingDelete(true)}>
@@ -269,7 +269,7 @@ export default function CharacterEditor() {
                 character.id,
               ),
             )
-            navigate('..')
+            navigate('..', { relative: 'path' })
           }}
         />
       ) : null}

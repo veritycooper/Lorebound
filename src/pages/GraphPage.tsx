@@ -35,8 +35,8 @@ export default function GraphPage() {
   function openNode(nodeId: string) {
     const parsed = parseGraphNodeId(nodeId)
     if (!parsed) return
-    if (parsed.kind === 'character') navigate(`../characters/${parsed.entityId}`)
-    else navigate(`../places/${parsed.entityId}`)
+    if (parsed.kind === 'character') navigate(`/story/${story.id}/characters/${parsed.entityId}`)
+    else navigate(`/story/${story.id}/places/${parsed.entityId}`)
   }
 
   return (
@@ -58,11 +58,11 @@ export default function GraphPage() {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => navigate(`../characters/${addCharacter().id}`)}
+                onClick={() => navigate(`/story/${story.id}/characters/${addCharacter().id}`)}
               >
                 New character
               </button>
-              <button type="button" className="btn" onClick={() => navigate(`../places/${addPlace().id}`)}>
+              <button type="button" className="btn" onClick={() => navigate(`/story/${story.id}/places/${addPlace().id}`)}>
                 New place
               </button>
             </div>

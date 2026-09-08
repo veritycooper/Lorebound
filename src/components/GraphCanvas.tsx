@@ -157,8 +157,14 @@ export function GraphCanvas({
   }
 
   function onPointerDown(event: PointerEvent<Element>, nodeId?: string) {
-    const target = event.currentTarget as HTMLElement
-    target.setPointerCapture(event.pointerId)
+    const target = event.currentTarget as Element
+    if ('setPointerCapture' in target) {
+      try {
+        target.setPointerCapture(event.pointerId)
+      } catch {
+        /* SVG groups may not accept capture in every engine */
+      }
+    }
     dragRef.current = {
       id: nodeId ?? null,
       moved: false,
@@ -277,6 +283,7 @@ export function GraphCanvas({
                 }}
                 style={{ cursor: 'pointer' }}
               >
+                <circle r={18} fill="transparent" />
                 {selected ? (
                   <circle r={radius + 6} fill="rgba(201, 164, 106, 0.18)" />
                 ) : null}
