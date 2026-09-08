@@ -5,17 +5,7 @@ import { emptyCharacter, emptyPlace, emptyRelationship, emptyStory } from '../li
 import GraphPage from './GraphPage'
 
 const storyApi = vi.hoisted(() => ({
-  story: emptyStory({
-    id: 's1',
-    characters: [
-      emptyCharacter({
-        id: 'lira',
-        name: 'Lira',
-        relationships: [emptyRelationship({ targetKind: 'place', targetId: 'mill', kind: 'lives in' })],
-      }),
-    ],
-    places: [emptyPlace({ id: 'mill', name: 'The Mill' })],
-  }),
+  story: {} as ReturnType<typeof emptyStory>,
   addCharacter: vi.fn(),
   addPlace: vi.fn(),
 }))
@@ -26,6 +16,17 @@ vi.mock('../context/StoryContext', () => ({
 
 describe('GraphPage', () => {
   it('still renders the story graph view', () => {
+    storyApi.story = emptyStory({
+      id: 's1',
+      characters: [
+        emptyCharacter({
+          id: 'lira',
+          name: 'Lira',
+          relationships: [emptyRelationship({ targetKind: 'place', targetId: 'mill', kind: 'lives in' })],
+        }),
+      ],
+      places: [emptyPlace({ id: 'mill', name: 'The Mill' })],
+    })
     const html = renderToStaticMarkup(
       <MemoryRouter initialEntries={['/story/s1/graph']}>
         <Routes>

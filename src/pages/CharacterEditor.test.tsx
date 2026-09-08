@@ -5,7 +5,7 @@ import { emptyCharacter, emptyMagicSystem, emptyPlace, emptyRelationship, emptyS
 import CharacterEditor from './CharacterEditor'
 
 const storyApi = vi.hoisted(() => ({
-  story: emptyStory(),
+  story: {} as ReturnType<typeof emptyStory>,
   setCharacters: vi.fn(),
   updateStory: vi.fn(),
   saveImageFile: vi.fn(),
