@@ -8,9 +8,12 @@ export type PlaceType =
   | 'wilderness'
   | 'other'
 
+export type RelationTargetKind = 'character' | 'place'
+
 export type Relationship = {
   id: string
-  otherCharacterId: string
+  targetKind: RelationTargetKind
+  targetId: string
   kind: string
   notes: string
 }

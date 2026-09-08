@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, exportLibrary, importLibrary, saveImage, saveStory } from '../db'
-import { emptyCharacter, emptyPlace, emptyStory } from './entities'
+import { emptyCharacter, emptyPlace, emptyRelationship, emptyStory } from './entities'
 import { dataUrlToArrayBuffer, decodeText } from './images'
 
 describe('export / import', () => {
@@ -31,6 +31,60 @@ describe('export / import', () => {
     const images = await db.images.toArray()
     expect(images).toHaveLength(1)
     expect(decodeText(images[0]!.data)).toBe('portrait')
+  })
+
+  it('round-trips structured character relationships', async () => {
+    const mill = emptyPlace({ id: 'mill', name: 'Ashwood Mill' })
+    const lira = emptyCharacter({
+      name: 'Lira',
+      relationships: [
+        emptyRelationship({ targetKind: 'place', targetId: mill.id, kind: 'lives in', notes: 'loft' }),
+      ],
+    })
+    await saveStory(emptyStory({ title: 'Linked', characters: [lira], places: [mill] }))
+
+    const payload = await exportLibrary()
+    await importLibrary(payload, 'replace')
+    const stories = await db.stories.toArray()
+    const rel = stories[0]?.characters[0]?.relationships[0]
+    expect(rel).toMatchObject({
+      targetKind: 'place',
+      targetId: 'mill',
+      kind: 'lives in',
+      notes: 'loft',
+    })
+    expect(rel).not.toHaveProperty('otherCharacterId')
+  })
+
+  it('hydrates legacy otherCharacterId rows on import', async () => {
+    await importLibrary(
+      {
+        version: 1,
+        app: 'lorebound',
+        exportedAt: new Date().toISOString(),
+        stories: [
+          emptyStory({
+            title: 'Old',
+            characters: [
+              emptyCharacter({
+                id: 'lira',
+                name: 'Lira',
+                relationships: [{ id: 'r1', otherCharacterId: 'corvin', kind: 'rivals', notes: '' } as never],
+              }),
+              emptyCharacter({ id: 'corvin', name: 'Corvin' }),
+            ],
+          }),
+        ],
+        images: [],
+      },
+      'replace',
+    )
+    const stories = await db.stories.toArray()
+    expect(stories[0]?.characters[0]?.relationships[0]).toMatchObject({
+      targetKind: 'character',
+      targetId: 'corvin',
+      kind: 'rivals',
+    })
   })
 
   it('merges without overwriting existing stories', async () => {

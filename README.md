@@ -61,9 +61,10 @@ The build also copies `index.html` to `404.html` so in-app routes still load on 
 Each story holds:
 
 - Overview (title, summary, status)
-- Characters (notes, relationships, uploaded portraits, optional Pinterest URL)
+- Characters (notes, relationships to people or places, uploaded portraits, optional Pinterest URL)
 - Magic systems
 - Legal systems and statutes
 - Places, connections, and uploaded map images
+- Graph of people and places (force-directed, from relationships)
 - Chapters / drafts with word count
 - Scene ideas inbox
