@@ -4,6 +4,7 @@ import BackupPage from './pages/BackupPage'
 import ChapterEditor from './pages/ChapterEditor'
 import CharacterEditor from './pages/CharacterEditor'
 import CharactersPage from './pages/CharactersPage'
+import GraphPage from './pages/GraphPage'
 import HomePage from './pages/HomePage'
 import LawEditor from './pages/LawEditor'
 import LawsPage from './pages/LawsPage'
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="laws/:entityId" element={<LawEditor />} />
           <Route path="places" element={<PlacesPage />} />
           <Route path="places/:entityId" element={<PlaceEditor />} />
+          <Route path="graph" element={<GraphPage />} />
           <Route path="writing" element={<WritingPage />} />
           <Route path="writing/:entityId" element={<ChapterEditor />} />
           <Route path="ideas" element={<SceneIdeasPage />} />

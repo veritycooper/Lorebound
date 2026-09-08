@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { ImageRecord, LoreboundExport, Story } from './types'
-import { emptyStory } from './lib/entities'
+import { emptyStory, hydrateStory } from './lib/entities'
 import { arrayBufferToDataUrl, blobToArrayBuffer, dataUrlToArrayBuffer } from './lib/images'
 import { createId } from './lib/ids'
 
@@ -25,11 +25,12 @@ export const db = new LoreboundDB()
 
 export async function listStories(): Promise<Story[]> {
   const stories = await db.stories.orderBy('updatedAt').reverse().toArray()
-  return stories
+  return stories.map((story) => hydrateStory(story))
 }
 
 export async function getStory(id: string): Promise<Story | undefined> {
-  return db.stories.get(id)
+  const story = await db.stories.get(id)
+  return story ? hydrateStory(story) : undefined
 }
 
 export async function saveStory(story: Story): Promise<void> {
@@ -174,10 +175,9 @@ export async function importLibrary(
 
     for (const story of stories) {
       const remapped = remapStoryImages(story, imageIdMap)
-      const nextStory =
-        mode === 'merge'
-          ? { ...remapped, id: createId(), updatedAt: Date.now() }
-          : remapped
+      const nextStory = hydrateStory(
+        mode === 'merge' ? { ...remapped, id: createId(), updatedAt: Date.now() } : remapped,
+      )
       await db.stories.put(nextStory)
     }
 

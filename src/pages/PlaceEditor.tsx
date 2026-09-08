@@ -4,14 +4,14 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Field } from '../components/Field'
 import { ImageUpload } from '../components/ImageUpload'
 import { useStory } from '../context/StoryContext'
-import { displayName } from '../lib/entities'
+import { displayName, dropRelationshipsTo } from '../lib/entities'
 import type { Place } from '../types'
 import { PLACE_TYPES } from '../types'
 
 export default function PlaceEditor() {
   const { entityId } = useParams()
   const navigate = useNavigate()
-  const { story, setPlaces, saveImageFile, removeImage } = useStory()
+  const { story, setPlaces, setCharacters, saveImageFile, removeImage } = useStory()
   const place = story.places.find((entry) => entry.id === entityId)
   const [pendingDelete, setPendingDelete] = useState(false)
 
@@ -135,6 +135,7 @@ export default function PlaceEditor() {
           onCancel={() => setPendingDelete(false)}
           onConfirm={() => {
             if (place.mapImageId) void removeImage(place.mapImageId)
+            setCharacters(dropRelationshipsTo(story.characters, 'place', id))
             setPlaces(
               story.places
                 .filter((entry) => entry.id !== id)
