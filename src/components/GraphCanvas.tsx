@@ -277,7 +277,9 @@ export function GraphCanvas({
                 }}
                 style={{ cursor: 'pointer' }}
               >
-                {selected ? <circle r={radius + 6} fill="rgba(201, 164, 106, 0.18)" />} : null}
+                {selected ? (
+                  <circle r={radius + 6} fill="rgba(201, 164, 106, 0.18)" />
+                ) : null}
                 <circle
                   r={radius}
                   fill={NODE_FILL[node.kind]}
