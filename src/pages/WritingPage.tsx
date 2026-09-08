@@ -3,6 +3,7 @@ import { EmptyState } from '../components/EmptyState'
 import { useStory } from '../context/StoryContext'
 import { formatRelativeTime } from '../lib/dates'
 import { formatWordCount, wordCount } from '../lib/wordCount'
+import { displayName } from '../lib/entities'
 
 export default function WritingPage() {
   const { story, addChapter } = useStory()
@@ -36,7 +37,7 @@ export default function WritingPage() {
               style={{ textAlign: 'left', cursor: 'pointer', minHeight: 0 }}
               onClick={() => navigate(chapter.id)}
             >
-              <h3>{chapter.title}</h3>
+              <h3>{displayName(chapter.title, 'Untitled chapter')}</h3>
               <p className="muted small">
                 {formatWordCount(wordCount(chapter.body))} · {formatRelativeTime(chapter.updatedAt)}
               </p>

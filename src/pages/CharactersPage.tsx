@@ -3,6 +3,7 @@ import { EmptyState } from '../components/EmptyState'
 import { useImageUrl } from '../hooks/useImageUrl'
 import { useStory } from '../context/StoryContext'
 import type { Character } from '../types'
+import { displayName } from '../lib/entities'
 
 export default function CharactersPage() {
   const { story, addCharacter } = useStory()
@@ -51,10 +52,10 @@ function CharacterCard({ character }: { character: Character }) {
         <img className="portrait" src={url} alt="" style={{ marginBottom: '0.8rem', maxHeight: 220, objectFit: 'cover' }} />
       ) : (
         <div className="portrait-placeholder" style={{ marginBottom: '0.8rem', minHeight: 120, aspectRatio: '16 / 9' }}>
-          {character.name.slice(0, 1)}
+          {displayName(character.name, '?').slice(0, 1)}
         </div>
       )}
-      <h3>{character.name}</h3>
+      <h3>{displayName(character.name, 'Unnamed character')}</h3>
       <p className="muted small">{character.role || 'Role unwritten'}</p>
     </Link>
   )

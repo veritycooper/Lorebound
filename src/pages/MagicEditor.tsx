@@ -40,12 +40,16 @@ export default function MagicEditor() {
         </button>
       </div>
       <header className="page-head">
-        <h1>{system.name}</h1>
+        <h1>{system.name.trim() || 'Unnamed system'}</h1>
       </header>
       <div className="paper">
         <div className="stack">
           <Field label="Name">
-            <input value={system.name} onChange={(event) => patch({ name: event.target.value })} />
+            <input
+              value={system.name}
+              placeholder="What do they call this craft?"
+              onChange={(event) => patch({ name: event.target.value })}
+            />
           </Field>
           <Field label="Rules">
             <textarea value={system.rules} onChange={(event) => patch({ rules: event.target.value })} />

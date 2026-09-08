@@ -48,12 +48,16 @@ export default function LawEditor() {
         </button>
       </div>
       <header className="page-head">
-        <h1>{system.name}</h1>
+        <h1>{system.name.trim() || 'Unnamed code'}</h1>
       </header>
       <div className="paper">
         <div className="stack">
           <Field label="Name">
-            <input value={system.name} onChange={(event) => patch({ name: event.target.value })} />
+            <input
+              value={system.name}
+              placeholder="The name of this code"
+              onChange={(event) => patch({ name: event.target.value })}
+            />
           </Field>
           <Field label="Region">
             <input

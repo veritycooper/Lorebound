@@ -4,6 +4,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Field } from '../components/Field'
 import { ImageUpload } from '../components/ImageUpload'
 import { useStory } from '../context/StoryContext'
+import { displayName } from '../lib/entities'
 import type { Place } from '../types'
 import { PLACE_TYPES } from '../types'
 
@@ -63,7 +64,7 @@ export default function PlaceEditor() {
         </button>
       </div>
       <header className="page-head">
-        <h1>{place.name}</h1>
+        <h1>{place.name.trim() || 'Unnamed place'}</h1>
       </header>
       <div className="section-gap">
         <ImageUpload
@@ -76,7 +77,11 @@ export default function PlaceEditor() {
         <div className="paper">
           <div className="stack">
             <Field label="Name">
-              <input value={place.name} onChange={(event) => patch({ name: event.target.value })} />
+              <input
+                value={place.name}
+                placeholder="A name on the map"
+                onChange={(event) => patch({ name: event.target.value })}
+              />
             </Field>
             <Field label="Type">
               <select
@@ -116,7 +121,7 @@ export default function PlaceEditor() {
                       checked={place.connectedPlaceIds.includes(entry.id)}
                       onChange={() => toggleConnected(entry.id)}
                     />
-                    {entry.name}
+                    {displayName(entry.name, 'Unnamed place')}
                   </label>
                 ))}
             </div>

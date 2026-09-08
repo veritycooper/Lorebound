@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { useStory } from '../context/StoryContext'
+import { displayName } from '../lib/entities'
 
 export default function MagicPage() {
   const { story, addMagicSystem } = useStory()
@@ -36,7 +37,7 @@ export default function MagicPage() {
               style={{ textAlign: 'left', cursor: 'pointer' }}
               onClick={() => navigate(system.id)}
             >
-              <h3>{system.name}</h3>
+              <h3>{displayName(system.name, 'Unnamed system')}</h3>
               <p className="muted small">{system.whoCanUse || 'Who can use it is still a mystery.'}</p>
             </button>
           ))}

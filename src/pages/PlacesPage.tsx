@@ -4,6 +4,7 @@ import { useImageUrl } from '../hooks/useImageUrl'
 import { useStory } from '../context/StoryContext'
 import { PLACE_TYPES } from '../types'
 import type { Place } from '../types'
+import { displayName } from '../lib/entities'
 
 export default function PlacesPage() {
   const { story, addPlace } = useStory()
@@ -45,7 +46,7 @@ function PlaceCard({ place, onOpen }: { place: Place; onOpen: () => void }) {
         <img className="map-preview" src={url} alt="" style={{ marginBottom: '0.8rem' }} />
       ) : null}
       <span className="chip">{typeLabel}</span>
-      <h3>{place.name}</h3>
+      <h3>{displayName(place.name, 'Unnamed place')}</h3>
       <p className="muted small">{place.description || 'Awaiting description.'}</p>
     </button>
   )

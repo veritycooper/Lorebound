@@ -5,6 +5,7 @@ import { useStory } from '../context/StoryContext'
 import { formatRelativeTime } from '../lib/dates'
 import { STORY_STATUSES } from '../types'
 import { formatWordCount, wordCount } from '../lib/wordCount'
+import { displayName } from '../lib/entities'
 
 export default function OverviewPage() {
   const { story, updateStory, saveStatus, lastSavedAt } = useStory()
@@ -71,7 +72,7 @@ export default function OverviewPage() {
         <div className="row">
           {latestChapter ? (
             <Link className="btn btn-primary" to={`writing/${latestChapter.id}`}>
-              Continue “{latestChapter.title}”
+              Continue “{displayName(latestChapter.title, 'Untitled chapter')}”
             </Link>
           ) : (
             <Link className="btn btn-primary" to="writing">

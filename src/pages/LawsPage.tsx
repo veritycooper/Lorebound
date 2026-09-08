@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { useStory } from '../context/StoryContext'
+import { displayName } from '../lib/entities'
 
 export default function LawsPage() {
   const { story, addLegalSystem } = useStory()
@@ -32,7 +33,7 @@ export default function LawsPage() {
               style={{ textAlign: 'left', cursor: 'pointer' }}
               onClick={() => navigate(system.id)}
             >
-              <h3>{system.name}</h3>
+              <h3>{displayName(system.name, 'Unnamed code')}</h3>
               <p className="muted small">
                 {system.region || 'Region unset'} · {system.laws.length} laws
               </p>

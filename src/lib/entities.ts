@@ -32,7 +32,7 @@ export function emptyStory(partial?: Partial<Story>): Story {
 export function emptyCharacter(partial?: Partial<Character>): Character {
   return {
     id: createId(),
-    name: 'Unnamed character',
+    name: '',
     role: '',
     aliases: '',
     appearance: '',
@@ -48,7 +48,7 @@ export function emptyCharacter(partial?: Partial<Character>): Character {
 export function emptyMagicSystem(partial?: Partial<MagicSystem>): MagicSystem {
   return {
     id: createId(),
-    name: 'Unnamed system',
+    name: '',
     rules: '',
     costs: '',
     whoCanUse: '',
@@ -60,7 +60,7 @@ export function emptyMagicSystem(partial?: Partial<MagicSystem>): MagicSystem {
 export function emptyLegalSystem(partial?: Partial<LegalSystem>): LegalSystem {
   return {
     id: createId(),
-    name: 'Unnamed code',
+    name: '',
     region: '',
     principles: '',
     laws: [],
@@ -72,7 +72,7 @@ export function emptyLegalSystem(partial?: Partial<LegalSystem>): LegalSystem {
 export function emptyPlace(partial?: Partial<Place>): Place {
   return {
     id: createId(),
-    name: 'Unnamed place',
+    name: '',
     type: 'other',
     description: '',
     connectedPlaceIds: [],
@@ -86,7 +86,7 @@ export function emptyChapter(partial?: Partial<Chapter>): Chapter {
   const now = Date.now()
   return {
     id: createId(),
-    title: 'Untitled chapter',
+    title: '',
     body: '',
     updatedAt: now,
     ...partial,
@@ -110,6 +110,11 @@ export function touchStory(story: Story, extra?: Partial<Story>): Story {
     ...extra,
     updatedAt: Date.now(),
   }
+}
+
+export function displayName(value: string, fallback: string): string {
+  const trimmed = value.trim()
+  return trimmed || fallback
 }
 
 export function parseTags(value: string): string[] {

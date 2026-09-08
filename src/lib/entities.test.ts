@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptyStory, parseTags } from './entities'
+import { displayName, emptyStory, parseTags } from './entities'
 
 describe('parseTags', () => {
   it('splits commas and hashes', () => {
@@ -8,6 +8,13 @@ describe('parseTags', () => {
 
   it('drops empties', () => {
     expect(parseTags(' , # ')).toEqual([])
+  })
+})
+
+describe('displayName', () => {
+  it('falls back when blank', () => {
+    expect(displayName('', 'Unnamed character')).toBe('Unnamed character')
+    expect(displayName('  Lira  ', 'Unnamed character')).toBe('Lira')
   })
 })
 

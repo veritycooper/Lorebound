@@ -47,6 +47,7 @@ export default function ChapterEditor() {
         <input
           className="input"
           value={chapter.title}
+          placeholder="Chapter title"
           onChange={(event) => patch({ title: event.target.value })}
           style={{
             background: 'transparent',

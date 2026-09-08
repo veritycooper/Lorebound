@@ -75,7 +75,11 @@ export default function CharacterEditor() {
         <div className="paper">
           <div className="stack">
             <Field label="Name">
-              <input value={character.name} onChange={(event) => patch({ name: event.target.value })} />
+              <input
+                value={character.name}
+                placeholder="What are they called?"
+                onChange={(event) => patch({ name: event.target.value })}
+              />
             </Field>
             <Field label="Role">
               <input
