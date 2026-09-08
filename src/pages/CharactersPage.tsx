@@ -3,7 +3,7 @@ import { EmptyState } from '../components/EmptyState'
 import { useImageUrl } from '../hooks/useImageUrl'
 import { useStory } from '../context/StoryContext'
 import type { Character } from '../types'
-import { displayName } from '../lib/entities'
+import { displayName, formatHeight } from '../lib/entities'
 
 export default function CharactersPage() {
   const { story, addCharacter } = useStory()
@@ -57,6 +57,11 @@ function CharacterCard({ character }: { character: Character }) {
       )}
       <h3>{displayName(character.name, 'Unnamed character')}</h3>
       <p className="muted small">{character.role || 'Role unwritten'}</p>
+      {character.species.trim() || character.height ? (
+        <p className="muted small">
+          {[character.species.trim(), formatHeight(character.height)].filter(Boolean).join(' · ')}
+        </p>
+      ) : null}
     </Link>
   )
 }

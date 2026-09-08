@@ -1,6 +1,8 @@
 import type {
   Chapter,
   Character,
+  CharacterHeight,
+  CharacterMagicLink,
   LegalSystem,
   MagicSystem,
   Place,
@@ -11,6 +13,22 @@ import type {
   StoryStatus,
 } from '../types'
 import { createId } from './ids'
+
+export const HEIGHT_FEET_MAX = 12
+export const HEIGHT_INCHES_MAX = 11
+
+export const DEFAULT_SPECIES = [
+  'Human',
+  'Elf',
+  'Dwarf',
+  'Halfling',
+  'Orc',
+  'Goblin',
+  'Gnome',
+  'Fae',
+  'Giant',
+  'Dragonborn',
+] as const
 
 export function emptyStory(partial?: Partial<Story>): Story {
   const now = Date.now()
@@ -48,12 +66,15 @@ export function emptyCharacter(partial?: Partial<Character>): Character {
     name: '',
     role: '',
     aliases: '',
+    species: '',
+    height: null,
     appearance: '',
     personality: '',
     notes: '',
     imageId: null,
     pinterestUrl: '',
     relationships: [],
+    magicLinks: [],
     ...partial,
   }
 }
@@ -177,12 +198,21 @@ export function hydrateRelationship(raw: unknown): Relationship {
 
 export function hydrateCharacter(raw: unknown): Character {
   const record = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
-  const { relationships, ...rest } = record
+  const { relationships, height, species, magicLinks: _magicLinks, magicSystemIds: _ids, ...rest } = record
   const base = emptyCharacter(rest as Partial<Character>)
   return {
     ...base,
+    species: typeof species === 'string' ? species : '',
+    height: parseHeight(height),
     relationships: Array.isArray(relationships) ? relationships.map((entry) => hydrateRelationship(entry)) : [],
+    magicLinks: hydrateMagicLinks(record),
   }
+}
+
+export function hydrateMagicSystem(raw: unknown): MagicSystem {
+  const record = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  const { practitionerIds: _legacy, ...rest } = record
+  return emptyMagicSystem(rest as Partial<MagicSystem>)
 }
 
 export function hydratePlace(raw: unknown): Place {
@@ -197,12 +227,22 @@ export function hydratePlace(raw: unknown): Place {
 }
 
 export function hydrateStory(raw: unknown): Story {
-  const record = raw && typeof raw === 'object' ? (raw as Partial<Story>) : {}
+  const record = raw && typeof raw === 'object' ? (raw as Partial<Story> & { magicSystems?: unknown[] }) : {}
   const base = emptyStory(record)
+  const rawSystems = Array.isArray(record.magicSystems) ? record.magicSystems : []
+  const magicSystems = rawSystems.map((entry) => hydrateMagicSystem(entry))
+  const systemIds = new Set(magicSystems.map((system) => system.id))
+  const characters = applyLegacyPractitionerIds(
+    Array.isArray(record.characters) ? record.characters.map((entry) => hydrateCharacter(entry)) : [],
+    rawSystems,
+  ).map((character) => ({
+    ...character,
+    magicLinks: character.magicLinks.filter((link) => systemIds.has(link.magicSystemId)),
+  }))
   return {
     ...base,
-    characters: Array.isArray(record.characters) ? record.characters.map((entry) => hydrateCharacter(entry)) : [],
-    magicSystems: Array.isArray(record.magicSystems) ? record.magicSystems : [],
+    characters,
+    magicSystems,
     legalSystems: Array.isArray(record.legalSystems) ? record.legalSystems : [],
     places: Array.isArray(record.places) ? record.places.map((entry) => hydratePlace(entry)) : [],
     chapters: Array.isArray(record.chapters) ? record.chapters : [],
@@ -237,4 +277,152 @@ export function dropRelationshipsTo(characters: Character[], targetKind: Relatio
       (rel) => !(rel.targetKind === targetKind && rel.targetId === targetId),
     ),
   }))
+}
+
+function clampInt(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(value)))
+}
+
+export function parseHeight(raw: unknown): CharacterHeight | null {
+  if (raw == null || raw === '') return null
+  if (typeof raw === 'object') {
+    const record = raw as { feet?: unknown; inches?: unknown }
+    const hasFeet = typeof record.feet === 'number' && Number.isFinite(record.feet)
+    const hasInches = typeof record.inches === 'number' && Number.isFinite(record.inches)
+    if (!hasFeet && !hasInches) return null
+    return {
+      feet: hasFeet ? clampInt(record.feet as number, 0, HEIGHT_FEET_MAX) : 0,
+      inches: hasInches ? clampInt(record.inches as number, 0, HEIGHT_INCHES_MAX) : 0,
+    }
+  }
+  return null
+}
+
+export function formatHeight(height: CharacterHeight | null): string {
+  if (!height) return ''
+  return `${height.feet}′${height.inches}″`
+}
+
+export function setHeightPart(
+  current: CharacterHeight | null,
+  part: 'feet' | 'inches',
+  raw: string,
+): CharacterHeight | null {
+  const parsed = raw === '' ? null : Number(raw)
+  if (parsed !== null && !Number.isFinite(parsed)) return current
+  const nextFeet = part === 'feet' ? parsed : (current?.feet ?? null)
+  const nextInches = part === 'inches' ? parsed : (current?.inches ?? null)
+  if (nextFeet === null && nextInches === null) return null
+  return {
+    feet: nextFeet === null ? 0 : clampInt(nextFeet, 0, HEIGHT_FEET_MAX),
+    inches: nextInches === null ? 0 : clampInt(nextInches, 0, HEIGHT_INCHES_MAX),
+  }
+}
+
+export function storySpeciesOptions(characters: Pick<Character, 'species'>[]): string[] {
+  const seen = new Set<string>()
+  const options: string[] = []
+  for (const name of [...DEFAULT_SPECIES, ...characters.map((character) => character.species)]) {
+    const trimmed = name.trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    options.push(trimmed)
+  }
+  return options
+}
+
+export function hydrateMagicLinks(record: Record<string, unknown>): CharacterMagicLink[] {
+  const links = new Map<string, CharacterMagicLink>()
+  const rawIds = record.magicSystemIds
+  if (Array.isArray(rawIds)) {
+    for (const id of rawIds) {
+      if (typeof id === 'string' && id) {
+        links.set(id, { magicSystemId: id, note: '' })
+      }
+    }
+  }
+  const rawLinks = record.magicLinks
+  if (Array.isArray(rawLinks)) {
+    for (const entry of rawLinks) {
+      if (!entry || typeof entry !== 'object') continue
+      const item = entry as { magicSystemId?: unknown; note?: unknown }
+      const magicSystemId = typeof item.magicSystemId === 'string' ? item.magicSystemId : ''
+      if (!magicSystemId) continue
+      links.set(magicSystemId, {
+        magicSystemId,
+        note: typeof item.note === 'string' ? item.note : '',
+      })
+    }
+  }
+  return [...links.values()]
+}
+
+export function applyLegacyPractitionerIds(characters: Character[], rawSystems: unknown[]): Character[] {
+  let next = characters
+  for (const system of rawSystems) {
+    if (!system || typeof system !== 'object') continue
+    const record = system as { id?: unknown; practitionerIds?: unknown }
+    const systemId = typeof record.id === 'string' ? record.id : ''
+    if (!systemId || !Array.isArray(record.practitionerIds)) continue
+    for (const characterId of record.practitionerIds) {
+      if (typeof characterId === 'string' && characterId) {
+        next = linkCharacterToMagic(next, characterId, systemId)
+      }
+    }
+  }
+  return next
+}
+
+export function linkCharacterToMagic(
+  characters: Character[],
+  characterId: string,
+  magicSystemId: string,
+  note?: string,
+): Character[] {
+  if (!characterId || !magicSystemId) return characters
+  return characters.map((character) => {
+    if (character.id !== characterId) return character
+    const existing = character.magicLinks.find((link) => link.magicSystemId === magicSystemId)
+    if (existing) {
+      if (note === undefined) return character
+      return {
+        ...character,
+        magicLinks: character.magicLinks.map((link) =>
+          link.magicSystemId === magicSystemId ? { ...link, note } : link,
+        ),
+      }
+    }
+    return {
+      ...character,
+      magicLinks: [...character.magicLinks, { magicSystemId, note: note ?? '' }],
+    }
+  })
+}
+
+export function unlinkCharacterFromMagic(
+  characters: Character[],
+  characterId: string,
+  magicSystemId: string,
+): Character[] {
+  return characters.map((character) =>
+    character.id === characterId
+      ? { ...character, magicLinks: character.magicLinks.filter((link) => link.magicSystemId !== magicSystemId) }
+      : character,
+  )
+}
+
+export function dropMagicLinksTo(characters: Character[], magicSystemId: string): Character[] {
+  return characters.map((character) => ({
+    ...character,
+    magicLinks: character.magicLinks.filter((link) => link.magicSystemId !== magicSystemId),
+  }))
+}
+
+export function practitionersForSystem(characters: Character[], magicSystemId: string) {
+  return characters.flatMap((character) => {
+    const link = character.magicLinks.find((entry) => entry.magicSystemId === magicSystemId)
+    return link ? [{ character, note: link.note }] : []
+  })
 }

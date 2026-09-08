@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, exportLibrary, importLibrary, saveImage, saveStory } from '../db'
-import { emptyCharacter, emptyPlace, emptyRelationship, emptyStory } from './entities'
+import { emptyCharacter, emptyMagicSystem, emptyPlace, emptyRelationship, emptyStory } from './entities'
 import { dataUrlToArrayBuffer, decodeText } from './images'
 
 describe('export / import', () => {
@@ -85,6 +85,52 @@ describe('export / import', () => {
       targetId: 'corvin',
       kind: 'rivals',
     })
+  })
+
+  it('round-trips height, custom species, and magic links', async () => {
+    const hearth = emptyMagicSystem({ id: 'hearth', name: 'Hearth-binding' })
+    const lira = emptyCharacter({
+      name: 'Lira',
+      species: 'Ashfolk',
+      height: { feet: 5, inches: 7 },
+      magicLinks: [{ magicSystemId: hearth.id, note: 'oven-warm' }],
+    })
+    await saveStory(emptyStory({ title: 'Craft', characters: [lira], magicSystems: [hearth] }))
+
+    const payload = await exportLibrary()
+    await importLibrary(payload, 'replace')
+    const stories = await db.stories.toArray()
+    const character = stories[0]?.characters[0]
+    expect(character).toMatchObject({
+      name: 'Lira',
+      species: 'Ashfolk',
+      height: { feet: 5, inches: 7 },
+      magicLinks: [{ magicSystemId: 'hearth', note: 'oven-warm' }],
+    })
+    expect(stories[0]?.magicSystems[0]).not.toHaveProperty('practitionerIds')
+  })
+
+  it('imports legacy practitionerIds as character magic links', async () => {
+    await importLibrary(
+      {
+        version: 1,
+        app: 'lorebound',
+        exportedAt: new Date().toISOString(),
+        stories: [
+          {
+            ...emptyStory({ title: 'Old magic' }),
+            characters: [emptyCharacter({ id: 'lira', name: 'Lira' })],
+            magicSystems: [
+              { ...emptyMagicSystem({ id: 'hearth', name: 'Hearth-binding' }), practitionerIds: ['lira'] } as never,
+            ],
+          },
+        ],
+        images: [],
+      },
+      'replace',
+    )
+    const stories = await db.stories.toArray()
+    expect(stories[0]?.characters[0]?.magicLinks).toEqual([{ magicSystemId: 'hearth', note: '' }])
   })
 
   it('merges without overwriting existing stories', async () => {
