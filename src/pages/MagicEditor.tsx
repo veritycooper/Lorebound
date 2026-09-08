@@ -124,9 +124,9 @@ export default function MagicEditor() {
                 ))}
               </select>
             </Field>
-          ) : (
+          ) : story.characters.length === 0 ? (
             <p className="hint">Add a character to this story to link them here.</p>
-          )}
+          ) : null}
         </section>
       </div>
       {pendingDelete ? (
