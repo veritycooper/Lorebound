@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { useStory } from '../context/StoryContext'
-import { displayName } from '../lib/entities'
+import { displayName, practitionersForSystem } from '../lib/entities'
 
 export default function MagicPage() {
   const { story, addMagicSystem } = useStory()
@@ -29,18 +29,26 @@ export default function MagicPage() {
         />
       ) : (
         <div className="story-grid">
-          {story.magicSystems.map((system) => (
-            <button
-              key={system.id}
-              type="button"
-              className="entity-card"
-              style={{ textAlign: 'left', cursor: 'pointer' }}
-              onClick={() => navigate(system.id)}
-            >
-              <h3>{displayName(system.name, 'Unnamed system')}</h3>
-              <p className="muted small">{system.whoCanUse || 'Who can use it is still a mystery.'}</p>
-            </button>
-          ))}
+          {story.magicSystems.map((system) => {
+            const names = practitionersForSystem(story.characters, system.id).map((entry) =>
+              displayName(entry.character.name, 'Unnamed character'),
+            )
+            return (
+              <button
+                key={system.id}
+                type="button"
+                className="entity-card"
+                style={{ textAlign: 'left', cursor: 'pointer' }}
+                onClick={() => navigate(system.id)}
+              >
+                <h3>{displayName(system.name, 'Unnamed system')}</h3>
+                <p className="muted small">{system.whoCanUse || 'Who can use it is still a mystery.'}</p>
+                <p className="muted small">
+                  {names.length ? names.join(' · ') : 'No practitioners linked yet.'}
+                </p>
+              </button>
+            )
+          })}
         </div>
       )}
     </div>

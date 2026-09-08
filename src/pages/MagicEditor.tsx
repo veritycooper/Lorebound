@@ -3,12 +3,19 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Field } from '../components/Field'
 import { useStory } from '../context/StoryContext'
+import {
+  displayName,
+  dropMagicLinksTo,
+  linkCharacterToMagic,
+  practitionersForSystem,
+  unlinkCharacterFromMagic,
+} from '../lib/entities'
 import type { MagicSystem } from '../types'
 
 export default function MagicEditor() {
   const { entityId } = useParams()
   const navigate = useNavigate()
-  const { story, setMagicSystems } = useStory()
+  const { story, setMagicSystems, setCharacters, updateStory } = useStory()
   const system = story.magicSystems.find((entry) => entry.id === entityId)
   const [pendingDelete, setPendingDelete] = useState(false)
 
@@ -24,6 +31,9 @@ export default function MagicEditor() {
   }
 
   const id = system.id
+  const practitioners = practitionersForSystem(story.characters, id)
+  const linkedIds = new Set(practitioners.map((entry) => entry.character.id))
+  const availablePeople = story.characters.filter((character) => !linkedIds.has(character.id))
 
   function patch(next: Partial<MagicSystem>) {
     setMagicSystems(story.magicSystems.map((entry) => (entry.id === id ? { ...entry, ...next } : entry)))
@@ -68,14 +78,67 @@ export default function MagicEditor() {
             <textarea value={system.notes} onChange={(event) => patch({ notes: event.target.value })} />
           </Field>
         </div>
+
+        <section className="editor-section">
+          <h2 className="editor-section-title">Practitioners</h2>
+          {practitioners.length === 0 ? (
+            <p className="hint">No one is linked to this system yet.</p>
+          ) : null}
+          {practitioners.map(({ character, note }) => (
+            <div className="magic-link-row" key={character.id}>
+              <Link className="magic-link-name" to={`../../characters/${character.id}`}>
+                {displayName(character.name, 'Unnamed character')}
+              </Link>
+              <input
+                className="input"
+                placeholder="How they use it, strength…"
+                value={note}
+                onChange={(event) =>
+                  setCharacters(linkCharacterToMagic(story.characters, character.id, id, event.target.value))
+                }
+              />
+              <button
+                type="button"
+                className="btn btn-small"
+                onClick={() => setCharacters(unlinkCharacterFromMagic(story.characters, character.id, id))}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          {availablePeople.length ? (
+            <Field label="Add a practitioner">
+              <select
+                value=""
+                onChange={(event) => {
+                  if (event.target.value) {
+                    setCharacters(linkCharacterToMagic(story.characters, event.target.value, id))
+                  }
+                }}
+              >
+                <option value="">Choose a character…</option>
+                {availablePeople.map((character) => (
+                  <option key={character.id} value={character.id}>
+                    {displayName(character.name, 'Unnamed character')}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : (
+            <p className="hint">Add a character to this story to link them here.</p>
+          )}
+        </section>
       </div>
       {pendingDelete ? (
         <ConfirmDialog
           title="Unmake this system?"
-          body="The rules will leave this volume."
+          body="The rules will leave this volume, and character links to it will be cleared."
           onCancel={() => setPendingDelete(false)}
           onConfirm={() => {
-            setMagicSystems(story.magicSystems.filter((entry) => entry.id !== id))
+            updateStory({
+              magicSystems: story.magicSystems.filter((entry) => entry.id !== id),
+              characters: dropMagicLinksTo(story.characters, id),
+            })
             navigate('..')
           }}
         />

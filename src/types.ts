@@ -18,17 +18,30 @@ export type Relationship = {
   notes: string
 }
 
+export type CharacterHeight = {
+  feet: number
+  inches: number
+}
+
+export type CharacterMagicLink = {
+  magicSystemId: string
+  note: string
+}
+
 export type Character = {
   id: string
   name: string
   role: string
   aliases: string
+  species: string
+  height: CharacterHeight | null
   appearance: string
   personality: string
   notes: string
   imageId: string | null
   pinterestUrl: string
   relationships: Relationship[]
+  magicLinks: CharacterMagicLink[]
 }
 
 export type MagicSystem = {

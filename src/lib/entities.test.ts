@@ -1,14 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DEFAULT_SPECIES,
   displayName,
+  dropMagicLinksTo,
   dropRelationshipsTo,
+  emptyCharacter,
   emptyRelationship,
   emptyStory,
+  formatHeight,
   hydrateCharacter,
   hydrateStory,
+  linkCharacterToMagic,
+  parseHeight,
   parseRelationshipTarget,
   parseTags,
+  practitionersForSystem,
   relationshipTargetValue,
+  setHeightPart,
+  storySpeciesOptions,
+  unlinkCharacterFromMagic,
 } from './entities'
 
 describe('parseTags', () => {
@@ -94,5 +104,96 @@ describe('hydrateStory', () => {
     })
     expect(story.places).toEqual([])
     expect(story.characters[0]?.relationships[0]?.targetKind).toBe('character')
+    expect(story.characters[0]?.species).toBe('')
+    expect(story.characters[0]?.height).toBeNull()
+    expect(story.characters[0]?.magicLinks).toEqual([])
+  })
+
+  it('migrates magicSystemIds and practitionerIds onto one character link list', () => {
+    const story = hydrateStory({
+      id: 's1',
+      characters: [
+        { id: 'lira', name: 'Lira', magicSystemIds: ['hearth'] },
+        { id: 'corvin', name: 'Corvin' },
+      ],
+      magicSystems: [{ id: 'hearth', name: 'Hearth-binding', practitionerIds: ['corvin', 'lira'] }],
+    })
+    expect(story.magicSystems[0]).not.toHaveProperty('practitionerIds')
+    expect(story.characters[0]?.magicLinks).toEqual([{ magicSystemId: 'hearth', note: '' }])
+    expect(story.characters[1]?.magicLinks).toEqual([{ magicSystemId: 'hearth', note: '' }])
+  })
+
+  it('keeps notes from character.magicLinks when both legacy shapes exist', () => {
+    const story = hydrateStory({
+      characters: [
+        {
+          id: 'lira',
+          magicLinks: [{ magicSystemId: 'hearth', note: 'keeps the ovens lit' }],
+          magicSystemIds: ['hearth'],
+        },
+      ],
+      magicSystems: [{ id: 'hearth', name: 'Hearth-binding', practitionerIds: ['lira'] }],
+    })
+    expect(story.characters[0]?.magicLinks).toEqual([
+      { magicSystemId: 'hearth', note: 'keeps the ovens lit' },
+    ])
+  })
+})
+
+describe('height', () => {
+  it('serializes structured feet and inches', () => {
+    expect(parseHeight({ feet: 5, inches: 7 })).toEqual({ feet: 5, inches: 7 })
+    expect(formatHeight({ feet: 5, inches: 7 })).toBe('5′7″')
+    expect(formatHeight(null)).toBe('')
+  })
+
+  it('builds a height from easy pickers', () => {
+    const afterFeet = setHeightPart(null, 'feet', '5')
+    expect(afterFeet).toEqual({ feet: 5, inches: 0 })
+    expect(setHeightPart(afterFeet, 'inches', '7')).toEqual({ feet: 5, inches: 7 })
+    expect(setHeightPart({ feet: 5, inches: 7 }, 'feet', '')).toEqual({ feet: 0, inches: 7 })
+    expect(setHeightPart(null, 'inches', '')).toBeNull()
+  })
+})
+
+describe('species options', () => {
+  it('seeds defaults and reuses a custom species from the story', () => {
+    const options = storySpeciesOptions([
+      emptyCharacter({ species: 'Ashfolk' }),
+      emptyCharacter({ species: 'elf' }),
+    ])
+    expect(options[0]).toBe('Human')
+    expect(options).toContain('Ashfolk')
+    expect(options.filter((name) => name.toLowerCase() === 'elf')).toEqual(['Elf'])
+    expect(options).toEqual([...new Set(options)])
+    for (const seed of DEFAULT_SPECIES) {
+      expect(options).toContain(seed)
+    }
+  })
+})
+
+describe('magic link sync', () => {
+  it('links and unlinks from either side against one source of truth', () => {
+    let characters = [
+      emptyCharacter({ id: 'lira', name: 'Lira' }),
+      emptyCharacter({ id: 'corvin', name: 'Corvin' }),
+    ]
+    characters = linkCharacterToMagic(characters, 'lira', 'hearth', 'oven-warm')
+    expect(practitionersForSystem(characters, 'hearth')).toEqual([
+      { character: characters[0], note: 'oven-warm' },
+    ])
+
+    characters = linkCharacterToMagic(characters, 'corvin', 'hearth')
+    expect(practitionersForSystem(characters, 'hearth').map((entry) => entry.character.id)).toEqual([
+      'lira',
+      'corvin',
+    ])
+
+    characters = unlinkCharacterFromMagic(characters, 'lira', 'hearth')
+    expect(characters[0]?.magicLinks).toEqual([])
+    expect(practitionersForSystem(characters, 'hearth')).toHaveLength(1)
+
+    characters = dropMagicLinksTo(characters, 'hearth')
+    expect(characters.every((character) => character.magicLinks.length === 0)).toBe(true)
   })
 })
